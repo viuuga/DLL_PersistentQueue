@@ -12,7 +12,7 @@ const char* file_QueueData  = "persistentQueue.bin",
           * tmpFile         = "tmp.bin",
           * shiftBites      = "shiftBites.bin";
 
-// Функция для удаления строк до указанного индекса
+// Function for deleting rows up to the specified index
 void removeLinesBefore(int i) {
     std::ifstream ifstream_QueueData(file_QueueData, std::ios::binary);
     if (!ifstream_QueueData) {
@@ -20,7 +20,7 @@ void removeLinesBefore(int i) {
         return;
     }
 
-    std::ofstream ofstream_tmp(tmpFile, std::ios::binary); // Временный файл для записи
+    std::ofstream ofstream_tmp(tmpFile, std::ios::binary);
     if (!ofstream_tmp) {
         std::cerr << "error create/open tmp file" << std::endl;
         return;
@@ -29,18 +29,18 @@ void removeLinesBefore(int i) {
     int currentIndex = 1;
     int dataLen;
 
-    // Считываем длину сообщения и сразу пропускаем до нужной строки
+    // We read the length of the message and immediately skip to the desired line
     while (ifstream_QueueData.read(reinterpret_cast<char*>(&dataLen), sizeof(int))) {
 
         if (currentIndex >= i) {
-            // Записываем длину и сообщение, если индекс >= i
+            
             ofstream_tmp.write(reinterpret_cast<const char*>(&dataLen), sizeof(int));
             std::vector<char> buffer(dataLen);
-            ifstream_QueueData.read(buffer.data(), dataLen);   // Чтение сообщения
-            ofstream_tmp.write(buffer.data(), dataLen);        // Запись сообщения
+            ifstream_QueueData.read(buffer.data(), dataLen); 
+            ofstream_tmp.write(buffer.data(), dataLen); 
         }
         else {
-            ifstream_QueueData.seekg(dataLen, std::ios::cur);  // Пропускаем сообщение
+            ifstream_QueueData.seekg(dataLen, std::ios::cur); 
         }
         currentIndex++;
     }
@@ -48,17 +48,14 @@ void removeLinesBefore(int i) {
     ifstream_QueueData.close();
     ofstream_tmp.close();
 
-
-    // Обнуляем файл хранящий номера линий.
     std::ofstream ofstream_StrNumbers(file_StrNumbers, std::ios::binary | std::ios::trunc);
     ofstream_StrNumbers.close();
 
-    // Удаляем оригинальный файл и переименовываем временный файл.
     remove(file_QueueData);
     rename(tmpFile, file_QueueData);
 }
 
-// Функция для сохранения сообщения в файл
+// Function for saving a message to a file
 void saveStrTo_QueueData(const char* data, int dataLen) {
     std::ofstream ofstream_QueueData(file_QueueData, std::ios::binary | std::ios::app);
 
@@ -67,13 +64,12 @@ void saveStrTo_QueueData(const char* data, int dataLen) {
         return;
     }
 
-    // Записываем длину сообщения
+
     ofstream_QueueData.write(reinterpret_cast<const char*>(&dataLen), sizeof(int));
-    // Записываем само сообщение
     ofstream_QueueData.write(data, dataLen);
 }
 
-// Функция для записи значения в файл
+// Function for writing a value to a file
 void writeValueTo_StrNumbers(int value) {
     std::ofstream ofstream_StrNumbers(file_StrNumbers, std::ios::binary);
     if (!ofstream_StrNumbers) {
@@ -84,7 +80,7 @@ void writeValueTo_StrNumbers(int value) {
     ofstream_StrNumbers.write(reinterpret_cast<const char*>(&value), sizeof(int));
 }
 
-// функция для считывания последнего зачения файла file_StrNumbers (номер первой не использованной строки).
+// function for reading the last value of the file_StrNumbers file (the number of the first unused line)
 bool readLastLine_StrNumbers(int& value) {
     std::ifstream ifstream_StrNumbers(file_StrNumbers, std::ios::binary);
     if (!ifstream_StrNumbers.is_open()) {
@@ -96,19 +92,18 @@ bool readLastLine_StrNumbers(int& value) {
         return false;
     }
 
-    return true; // Успешно прочитано
+    return true; 
 }
 
-// Функция для чтения строки по номеру
+// Function for reading a line by number
 char* readStrAtNum(int num, int* length) {
     std::ifstream ifstream_QueueData(file_QueueData, std::ios::binary);
     if (!ifstream_QueueData) {
         std::cerr << "error read QueueData file" << std::endl;
-        *length = 0; // Устанавливаем длину в 0
+        *length = 0;
         return nullptr;
     }
 
-    // Проверка на правильный номер
     if (num < 1) {
         *length = 0;
         return nullptr;
@@ -118,38 +113,34 @@ char* readStrAtNum(int num, int* length) {
 
 
     if (num == 1) {
-        // Чтение длины сообщения
-        ifstream_QueueData.read(reinterpret_cast<char*>(length), sizeof(int)); // Читаем длину сообщения
-        char* buffer = new char[*length + 1];     // Выделяем память для сообщения (+1 для нуль-терминатора)
-        ifstream_QueueData.read(buffer, *length); // Чтение сообщения
-        buffer[*length] = '\0';                   // Добавляем нуль-терминатор
+        ifstream_QueueData.read(reinterpret_cast<char*>(length), sizeof(int));
+        char* buffer = new char[*length + 1];  
+        ifstream_QueueData.read(buffer, *length); 
+        buffer[*length] = '\0';                  
 
-        // Записываем длину в файл смещения
         std::ofstream ofstream_shiftBites(shiftBites, std::ios::binary);
         if (ofstream_shiftBites) {
             shift = *length + sizeof(int);
-            ofstream_shiftBites.write(reinterpret_cast<const char*>(&shift), sizeof(int)); // Записываем текущее смещение
+            ofstream_shiftBites.write(reinterpret_cast<const char*>(&shift), sizeof(int)); 
         }
 
-        return buffer; // Возвращаем считанное сообщение
+        return buffer; 
     }
     else {
         std::ifstream ifstream_shiftBites(shiftBites, std::ios::binary);
         if (ifstream_shiftBites.read(reinterpret_cast<char*>(&shift), sizeof(int))) {
-            ifstream_QueueData.seekg(shift, std::ios::cur); // Перемещаем указатель
+            ifstream_QueueData.seekg(shift, std::ios::cur); 
 
-            // Чтение длины сообщения
             ifstream_QueueData.read(reinterpret_cast<char*>(length), sizeof(int));
             if (ifstream_QueueData.eof() || *length <= 0) {
-                *length = 0; // Устанавливаем длину в 0, если сообщение не найдено
+                *length = 0;
                 return nullptr;
             }
 
-            char* buffer = new char[*length + 1];     // Выделяем память для сообщения (+1 для нуль-терминатора)
-            ifstream_QueueData.read(buffer, *length); // Чтение сообщения
-            buffer[*length] = '\0';                   // Добавляем нуль-терминатор
+            char* buffer = new char[*length + 1];  
+            ifstream_QueueData.read(buffer, *length); 
+            buffer[*length] = '\0';                  
 
-            // Обновляем смещение
             std::ofstream ofstream_shiftBites(shiftBites, std::ios::binary | std::ios::trunc);
             if (ofstream_shiftBites) {
                 int newShift = shift + sizeof(int) + *length;
@@ -160,47 +151,46 @@ char* readStrAtNum(int num, int* length) {
         }
     }
 
-    *length = 0;   // Устанавливаем длину в 0, если не нашли сообщение
+    *length = 0;
     return nullptr; 
 }
 
-// Функция загрузки сообщения из файла
+// The function of downloading a message from a file
 char* loadStrFromFile(int* len) {
     std::ifstream ifs(file_QueueData, std::ios::binary);
     if (!ifs) {
-        *len = 0;       // Устанавливаем длину в 0
+        *len = 0;
         return nullptr;
     }
 
-    // Получаем размер файла
-    ifs.seekg(0, std::ios::end);   // Перемещаем указатель в конец
-    size_t fileSize = ifs.tellg(); // Получаем размер файла
+    ifs.seekg(0, std::ios::end);
+    size_t fileSize = ifs.tellg();
     if (fileSize == 0) {
-        *len = 0;       // Устанавливаем длину в 0
+        *len = 0;
         return nullptr;
     }
     ifs.close();
 
     int str_queue_num;
     if (!readLastLine_StrNumbers(str_queue_num)) {
-        str_queue_num = 1; // Установите начальное значение, если не удалось прочитать
+        str_queue_num = 1;
     }
 
     char* buffer;
-    buffer = readStrAtNum(str_queue_num, len); // считываем строку с номером str_queue_num
+    buffer = readStrAtNum(str_queue_num, len);
 
     if (buffer != nullptr) {
-        writeValueTo_StrNumbers(++str_queue_num); // Увеличиваем номер строки
+        writeValueTo_StrNumbers(++str_queue_num); 
     }
     else {
-        *len = 0; // Устанавливаем длину в 0 если не удалось прочитать сообщение
+        *len = 0;
     }
 
     if (str_queue_num > MAX_BUFFERS_LINES) {
-        removeLinesBefore(str_queue_num); // Удаляем строки если превышаем лимит
+        removeLinesBefore(str_queue_num);
     }
 
-    return buffer; // Возвращаем считанное сообщение
+    return buffer;
 }
 
 
